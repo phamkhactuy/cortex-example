@@ -40,6 +40,7 @@ public slots:
     void authorize(QString clientId, QString clientSecret, QString license);
 
     // open a session, so we can then get data from a headset
+    // you need a license to activate the session
     void createSession(QString token, QString headsetId, bool activate);
     void closeSession(QString token, QString sessionId);
 

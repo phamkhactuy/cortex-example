@@ -78,7 +78,9 @@ void CortexClient::logout(QString username) {
 }
 
 void CortexClient::authorize() {
-    sendRequest("authorize");
+    QJsonObject params;
+    params["debit"] = 0;
+    sendRequest("authorize", params);
 }
 
 void CortexClient::authorize(QString clientId, QString clientSecret, QString license) {
@@ -86,6 +88,7 @@ void CortexClient::authorize(QString clientId, QString clientSecret, QString lic
     params["client_id"] = clientId;
     params["client_secret"] = clientSecret;
     params["license"] = license;
+    params["debit"] = 1;
     sendRequest("authorize", params);
 }
 
