@@ -39,9 +39,6 @@ private:
     QString headsetId;
     QString license;
     QString token;
-
-    // the Emotiv id and password of the user
-    QString username, password;
 };
 
 #endif // SESSIONCREATOR_H
