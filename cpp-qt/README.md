@@ -18,14 +18,13 @@ From Qt Creator, open the **cortexexamples.pro** project file. Then you can comp
 On Windows, you may need to add the appropriate Qt bin folder to your PATH environment variable.  
 For example, if you installed Qt 5.9.3 in C:\Qt and you use Visual Studio 2015, you should add "C:\Qt\5.9.3\msvc2015\bin" to your PATH.
 
-## Configure your Emotiv id and client id
+## Configure your EmotivID and client id
 
 To run these examples successfully, you need to edit **SessionCreator.cpp**, located in the **cortexclient** folder.
 
-At the top of this file, you need to set the client id and client secret of your Cortex app.  
-To get a client id and a client secret, you must connect to your Emotiv account on emotiv.com and create a Cortex app.
+At the top of this file, you need to set the client id and client secret of your Cortex app. In the same file, you also need to set your EmotivID and password.
 
-In the same file, you also need to set your Emotiv id and password.
+To get a client id and a client secret, you must connect to your Emotiv account on [emotiv.com](https://www.emotiv.com/my-account/cortex-apps/) and create a Cortex app. If you don't have a EmotivID, you can [register here](https://id.emotivcloud.com/eoidc/account/registration/).
 
 ## Code structure
 

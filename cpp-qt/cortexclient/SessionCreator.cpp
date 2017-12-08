@@ -8,11 +8,11 @@ const QString clientId = "the client id of your Cortex app";
 const QString clientSecret = "the client secret of your Cortex app";
 
 /*
- * As a developer, you can use your personal Emotiv id to run the examples.
+ * As a developer, you can use your personal EmotivID to run the examples.
  * But in a real application, you should ask your users to login
- * with their own Emotiv id.
+ * with their own EmotivID.
  */
-const QString username = "a Emotiv id";
+const QString username = "a EmotivID";
 const QString password = "a password";
 
 
