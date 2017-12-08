@@ -7,11 +7,16 @@ These examples show how to call the Cortex API from C++, using the Qt framework.
 You must install the Qt framework. You can get it for free at [www.qt.io](https://www.qt.io).  
 These examples were compiled and tested with Qt 5.9
 
+On macOS, you also need to install Xcode, or the "Command Line Tools for Xcode".
+
 ## How to compile
 
 The easiest way to compile these sources is to use the Qt Creator IDE. It is included in the Qt framework.
 
 From Qt Creator, open the **cortexexamples.pro** project file. Then you can compile and run the examples directly from the IDE.
+
+On Windows, you may need to add the appropriate Qt bin folder to your PATH environment variable.  
+For example, if you installed Qt 5.9.3 in C:\Qt and you use Visual Studio 2015, you should add "C:\Qt\5.9.3\msvc2015\bin" to your PATH.
 
 ## Configure your Emotiv id and client id
 
@@ -30,11 +35,11 @@ There is a static library and a few executables. Each is located in its own fold
 
 This library contains most of the source code.
 
-The most important class is CortexClient, this is the one you should read first in order to understand these examples. It connects to Cortex using a web socket, and provides methods to call most of the Cortex APIs.
+The most important class is **CortexClient**, this is the one you should read first in order to understand these examples. It connects to Cortex using a web socket, and provides methods to call most of the Cortex APIs.
 
-Then, you should look at HeadsetFinder and SessionCreator. These 2 classes contains the logic to list the headsets connected to your device, and then open a session with a headset.
+Then, you should look at **HeadsetFinder** and **SessionCreator**. These 2 classes contain the logic to list the headsets connected to your device, and then open a session with a headset.
 
-The DataStreamExample class contains the logic to subscribe to any data stream of a headset.
+The **DataStreamExample** class contains the logic to subscribe to any data stream of a headset.
 
 ### motion
 
@@ -60,7 +65,7 @@ This example opens a session with the first Emotiv headset it can find, and disp
 
 This example opens a session with the first Emotiv headset it can find, and displays its eeg data stream for 30 seconds.
 
-To run this example, you need to edit the **main.cpp** file and set your Emotiv license.
+To run this example, you need to edit the **eeg/main.cpp** file and set your Emotiv license.
 
 ## Signals and slots in Qt
 
