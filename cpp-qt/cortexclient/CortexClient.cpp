@@ -14,16 +14,35 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 ***************/
 #include "CortexClient.h"
 
-#include <QUrl>
+#include <QMap>
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QJsonArray>
 #include <QtDebug>
+#include <QUrl>
+#include <QWebSocket>
+#include <QSslError>
 
+class CortexClientPrivate
+{
+public:
+    explicit CortexClientPrivate() {}
+    virtual ~CortexClientPrivate(){}
+
+
+    QWebSocket socket;
+    int nextRequestId;
+
+    // the key is a request id
+    // the value is the method of the request
+    QMap<int, QString> methodForRequestId;
+    QString token;
+};
 
 // utility function
-QStringList arrayToStringList(const QJsonArray &array) {
+QStringList arrayToStringList(const QJsonArray &array)
+{
     QStringList list;
     for (const QJsonValue &val : array) {
         list.append(val.toString());
@@ -31,52 +50,92 @@ QStringList arrayToStringList(const QJsonArray &array) {
     return list;
 }
 
-CortexClient::CortexClient(QObject *parent) : QObject(parent) {
-    nextRequestId = 1;
+CortexClient::CortexClient(QObject *parent)
+    : QObject(parent), d_ptr(new CortexClientPrivate())
+{
+    Q_D(CortexClient);
+    d->nextRequestId = 1;
 
     // forward the connected/disconnected signals
-    connect(&socket, &QWebSocket::connected, this, &CortexClient::connected);
-    connect(&socket, &QWebSocket::disconnected, this, &CortexClient::disconnected);
+    connect(&d->socket, &QWebSocket::connected, this, &CortexClient::connected);
+    connect(&d->socket, &QWebSocket::disconnected, this, &CortexClient::disconnected);
 
     // handle errors
-    connect(&socket, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error),
-            this, &CortexClient::onError);
-    connect(&socket, &QWebSocket::sslErrors, this, &CortexClient::onSslErrors);
+    connect(&d->socket, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error),
+            this, &CortexClient::onError, Qt::DirectConnection);
+    connect(&d->socket, &QWebSocket::sslErrors, this, &CortexClient::onSslErrors, Qt::DirectConnection);
 
     // handle incomming text messages
-    connect(&socket, &QWebSocket::textMessageReceived, this, &CortexClient::onMessageReceived);
+    connect(&d->socket, &QWebSocket::textMessageReceived, this, &CortexClient::onTextMessageReceived);
+    connect(&d->socket, &QWebSocket::binaryMessageReceived, this, &CortexClient::onBinaryMessageReceived);
 }
 
-void CortexClient::onError(QAbstractSocket::SocketError error) {
-    qCritical() << "Socket error:" << error;
+CortexClient::~CortexClient()
+{
+
 }
 
-void CortexClient::onSslErrors(const QList<QSslError> &errors) {
+QString CortexClient::token()
+{
+    Q_D(CortexClient);
+    return d->token;
+}
+
+void CortexClient::setToken(const QString &token)
+{
+    Q_D(CortexClient);
+    d->token = token;
+}
+
+void CortexClient::onError(QAbstractSocket::SocketError error)
+{
+    Q_D(CortexClient);
+    qCritical() << "Socket error:" << d->socket.errorString();
+}
+
+void CortexClient::onSslErrors(const QList<QSslError> &errors)
+{
+    Q_D(CortexClient);
     for (const QSslError &error : errors) {
         qCritical() << "SSL error:" << error.errorString();
     }
+    //QWebSocket::ignoreSslErrors();
+    d->socket.ignoreSslErrors();
 }
 
-void CortexClient::open() {
-    socket.open(QUrl("wss://emotivcortex.com:54321"));
+void CortexClient::open()
+{
+    Q_D(CortexClient);
+    d->socket.open(QUrl("wss://emotivcortex.com:54321"));
 }
 
-void CortexClient::close() {
-    socket.close();
-    nextRequestId = 1;
-    methodForRequestId.clear();
+void CortexClient::close()
+{
+    Q_D(CortexClient);
+    d->socket.close();
+    d->nextRequestId = 1;
+    d->methodForRequestId.clear();
 }
 
-void CortexClient::queryHeadsets() {
+bool CortexClient::isConnected()
+{
+    Q_D(CortexClient);
+    return (d->socket.state() == QAbstractSocket::ConnectedState);
+}
+
+void CortexClient::queryHeadsets()
+{
     sendRequest("queryHeadsets");
 }
 
-void CortexClient::getUserLogin() {
+void CortexClient::getUserLogin()
+{
     sendRequest("getUserLogin");
 }
 
-void CortexClient::login(QString username, QString password,
-                         QString clientId, QString clientSecret) {
+void CortexClient::login(const QString &username, const QString &password,
+                         const QString &clientId, const QString &clientSecret)
+{
     QJsonObject params;
     params["username"] = username;
     params["password"] = password;
@@ -85,19 +144,22 @@ void CortexClient::login(QString username, QString password,
     sendRequest("login", params);
 }
 
-void CortexClient::logout(QString username) {
+void CortexClient::logout(const QString& username)
+{
     QJsonObject params;
     params["username"] = username;
     sendRequest("logout", params);
 }
 
-void CortexClient::authorize() {
+void CortexClient::authorize()
+{
     QJsonObject params;
     params["debit"] = 0;
     sendRequest("authorize", params);
 }
 
-void CortexClient::authorize(QString clientId, QString clientSecret, QString license) {
+void CortexClient::authorize(const QString &clientId, const QString &clientSecret, const QString &license)
+{
     QJsonObject params;
     params["client_id"] = clientId;
     params["client_secret"] = clientSecret;
@@ -106,57 +168,178 @@ void CortexClient::authorize(QString clientId, QString clientSecret, QString lic
     sendRequest("authorize", params);
 }
 
-void CortexClient::createSession(QString token,
-                                 QString headsetId, bool activate) {
+void CortexClient::queryProfiles()
+{
+    Q_D(CortexClient);
     QJsonObject params;
-    params["_auth"] = token;
+    params["_auth"] = d->token;
+    sendRequest("queryProfile", params);
+}
+
+void CortexClient::setupProfiles(const QString &headset, const QString &profile, const QString &status)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["headset"] = headset;
+    params["profile"] = profile;
+    params["status"] = status;
+    sendRequest("setupProfile", params);
+}
+
+void CortexClient::querySessions()
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    sendRequest("querySessions", params);
+}
+
+void CortexClient::createSession(const QString &headsetId, bool activate)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
     params["headset"] = headsetId;
     params["status"] = activate ? "active" : "open";
     sendRequest("createSession", params);
 }
 
-void CortexClient::closeSession(QString token, QString sessionId) {
+void CortexClient::closeSession(const QString &sessionId)
+{
+    Q_D(CortexClient);
     QJsonObject params;
-    params["_auth"] = token;
+    params["_auth"] = d->token;
     params["session"] = sessionId;
     params["status"] = "close";
     sendRequest("updateSession", params);
 }
 
-void CortexClient::subscribe(QString token, QString sessionId, QString stream) {
+void CortexClient::updateSession(const QString &sessionId,  const QString &status, const QString &recordingName, const QString &recordingNote, const QString &recordingSubject)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["session"] = sessionId;
+    params["status"] = status;
+    if (recordingName.size())
+        params["recordingName"] = recordingName;
+    if (recordingNote.size())
+    params["recordingNote"] = recordingNote;
+    if (recordingSubject.size())
+        params["recordingSubject"] = recordingSubject;
+    sendRequest("updateSession", params);
+}
+
+void CortexClient::updateSessionNote(const QString &sessionId, const QString &note, const QString &record)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["session"] = sessionId;
+    params["note"] = "note";
+    params["record"] = "record";
+    sendRequest("updateNote", params);
+}
+
+void CortexClient::sessionStartRecord(const QString &sessionId, const QString &recordingName, const QString &recordingNote, const QString &recordingSubject)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["session"] = sessionId;
+    params["status"] = "startRecord";
+    if (recordingName.size())
+        params["recordingName"] = recordingName;
+    if (recordingNote.size())
+    params["recordingNote"] = recordingNote;
+    if (recordingSubject.size())
+        params["recordingSubject"] = recordingSubject;
+    sendRequest("updateSession", params);
+}
+
+void CortexClient::sessionStopRecord(const QString &sessionId, const QString &recordingName, const QString &recordingNote, const QString &recordingSubject)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["session"] = sessionId;
+    params["status"] = "stopRecord";
+    if (recordingName.size())
+        params["recordingName"] = recordingName;
+    if (recordingNote.size())
+        params["recordingNote"] = recordingNote;
+    if (recordingSubject.size())
+        params["recordingSubject"] = recordingSubject;
+    sendRequest("updateSession", params);
+}
+
+void CortexClient::sessionAddTags(const QString &sessionId, const QStringList& tags)
+{
+    Q_D(CortexClient);
+    return ;
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["session"] = sessionId;
+    params["status"] = "addTags";
+    /// TODO:
+    //params["tags"] = tags;
+    sendRequest("updateSession", params);
+}
+
+void CortexClient::sessionRemoveTags(const QString &sessionId, const QStringList& tags)
+{
+    Q_D(CortexClient);
+    QJsonObject params;
+    params["_auth"] = d->token;
+    params["session"] = sessionId;
+    params["status"] = "removeTags";
+    sendRequest("updateSession", params);
+}
+
+void CortexClient::subscribe(const QString &sessionId, const QString &stream)
+{
+    Q_D(CortexClient);
     QJsonObject params;
     QJsonArray streamArray;
 
     streamArray.append(stream);
-    params["_auth"] = token;
+    params["_auth"] = d->token;
     params["session"] = sessionId;
     params["streams"] = streamArray;
 
     sendRequest("subscribe", params);
 }
 
-void CortexClient::unsubscribe(QString token, QString sessionId, QString stream) {
+void CortexClient::unsubscribe(const QString &sessionId, const QString &stream)
+{
+    Q_D(CortexClient);
     QJsonObject params;
     QJsonArray streamArray;
 
     streamArray.append(stream);
-    params["_auth"] = token;
+    params["_auth"] = d->token;
     params["session"] = sessionId;
     params["streams"] = streamArray;
 
     sendRequest("unsubscribe", params);
 }
 
-void CortexClient::getDetectionInfo(QString detection) {
+void CortexClient::getDetectionInfo(const QString &detection)
+{
+    Q_D(CortexClient);
     QJsonObject params;
+    params["_auth"] = d->token;
     params["detection"] = detection;
     sendRequest("getDetectionInfo", params);
 }
 
-void CortexClient::training(QString token, QString sessionId, QString detection,
-                            QString action, QString control) {
+void CortexClient::training(const QString &sessionId, const QString &detection,
+                            const QString &action, const QString &control)
+{
+    Q_D(CortexClient);
     QJsonObject params;
-    params["_auth"] = token;
+    params["_auth"] = d->token;
     params["session"] = sessionId;
     params["detection"] = detection;
     params["action"] = action;
@@ -164,28 +347,36 @@ void CortexClient::training(QString token, QString sessionId, QString detection,
     sendRequest("training", params);
 }
 
-void CortexClient::sendRequest(QString method, QJsonObject params) {
+void CortexClient::sendRequest(const QString &method, const QJsonObject &params)
+{
+    Q_D(CortexClient);
     QJsonObject request;
 
     // build the request
     request["jsonrpc"] = "2.0";
-    request["id"] = nextRequestId;
+    request["id"] = d->nextRequestId;
     request["method"] = method;
     request["params"] = params;
 
     // send the json message
     QString message = QJsonDocument(request).toJson();
     //qDebug() << " * send    " << message;
-    socket.sendTextMessage(message);
+    d->socket.sendTextMessage(message);
 
     // remember the method used for this request
-    methodForRequestId.insert(nextRequestId, method);
-    nextRequestId++;
+    d->methodForRequestId.insert(d->nextRequestId, method);
+    d->nextRequestId++;
+}
+void CortexClient::onBinaryMessageReceived(const QByteArray &message)
+{
+    Q_D(CortexClient);
+    qDebug() << " * Binary received" << message.size();
 }
 
-void CortexClient::onMessageReceived(QString message) {
+void CortexClient::onTextMessageReceived(const QString &message)
+{
     //qDebug() << " * received" << message;
-
+    Q_D(CortexClient);
     // parse the json message
     QJsonParseError err;
     QJsonDocument doc = QJsonDocument::fromJson(message.toUtf8(), &err);
@@ -201,19 +392,18 @@ void CortexClient::onMessageReceived(QString message) {
     if (id != -1) {
         // this is a RPC response, we get the method from the id
         // we must know the method in order to understand the result
-        QString method = methodForRequestId.value(id);
+        QString method = d->methodForRequestId.value(id);
         QJsonValue result = response.value("result");
         QJsonValue error = response.value("error");
 
-        methodForRequestId.remove(id);
+        d->methodForRequestId.remove(id);
 
         if (error.isObject()) {
             emitError(method, error.toObject());
         } else {
             handleResponse(method, result);
         }
-    }
-    else if (! sid.isEmpty()) {
+    } else if (! sid.isEmpty()) {
         // this message has a sid (subscription id)
         // so this is some data from a data stream
         double time = response.value("time").toDouble();
@@ -234,7 +424,9 @@ void CortexClient::onMessageReceived(QString message) {
     }
 }
 
-void CortexClient::handleResponse(QString method, const QJsonValue &result) {
+void CortexClient::handleResponse(const QString &method, const QJsonValue &result)
+{
+    Q_D(CortexClient);
     if (method == "queryHeadsets") {
         QList<Headset> headsets;
 
@@ -245,7 +437,8 @@ void CortexClient::handleResponse(QString method, const QJsonValue &result) {
         }
         emit queryHeadsetsOk(headsets);
     }
-    else if (method == "getUserLogin") {
+    else if (method == "getUserLogin")
+    {
         QStringList usernames;
         QJsonArray array = result.toArray();
         for (const QJsonValue &val : array) {
@@ -261,7 +454,8 @@ void CortexClient::handleResponse(QString method, const QJsonValue &result) {
     }
     else if (method == "authorize") {
         QString token = result.toObject().value("_auth").toString();
-        emit authorizeOk(token);
+        d->token = token;
+        emit authorized(token);
     }
     else if (method == "createSession") {
         QString sessionId = result.toObject().value("id").toString();
@@ -299,17 +493,22 @@ void CortexClient::handleResponse(QString method, const QJsonValue &result) {
     }
 }
 
-void CortexClient::handleGetDetectionInfo(const QJsonValue &result) {
+void CortexClient::handleGetDetectionInfo(const QJsonValue &result)
+{
     QJsonArray jactions = result.toObject().value("actions").toArray();
     QJsonArray jcontrols = result.toObject().value("controls").toArray();
     QJsonArray jevents = result.toObject().value("events").toArray();
 
-    emit getDetectionInfoOk(arrayToStringList(jactions),
-                            arrayToStringList(jcontrols),
-                            arrayToStringList(jevents));
+    QStringList actions = arrayToStringList(jactions);
+    QStringList controls = arrayToStringList(jcontrols);
+    QStringList events = arrayToStringList(jevents);
+    emit getDetectionInfoOk(actions,
+                            controls,
+                            events);
 }
 
-void CortexClient::emitError(QString method, const QJsonObject &obj) {
+void CortexClient::emitError(const QString &method, const QJsonObject &obj)
+{
     int code = obj.value("code").toInt();
     QString error = obj.value("message").toString();
     emit errorReceived(method, code, error);

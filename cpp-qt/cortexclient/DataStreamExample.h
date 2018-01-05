@@ -33,23 +33,28 @@ public:
     explicit DataStreamExample(QObject *parent = nullptr);
 
     // you need a license if you want to get the EEG data
-    void start(QString stream, QString license = "");
+    void start(const QString &stream, const QString &license = "");
 
 private slots:
     void onConnected();
     void onDisconnected();
-    void onErrorReceived(QString method, int code, QString error);
+    void onErrorReceived(const QString& method, int code, const QString &error);
+
+    void onGetUserLogin(const QStringList &usernames);
+    void onLogout();
+    void onLogin();
+    void onAuthorized(const QString &token);
 
     void onHeadsetsFound(const QList<Headset> &headsets);
-    void onSessionCreated(QString token, QString sessionId);
+    void onSessionCreated(const QString &sessionId);
 
-    void onSubscribeOk(QString sid);
-    void onUnsubscribeOk(QString msg);
+    void onSubscribe(const QString &sid);
+    void onUnsubscribe(const QString &msg);
 
-    void onStreamDataReceived(QString sessionId, QString stream,
+    void onStreamDataReceived(const QString &sessionId, const QString &stream,
                               double time, const QJsonArray &data);
 
-    void onCloseSessionOk();
+    void onCloseSession();
 
 protected:
     void timerEvent(QTimerEvent *event);
@@ -61,8 +66,7 @@ private:
 
     QString license;
     QString stream;
-    QString headsetId;
-    QString token;
+    QString headsetId;    
     QString sessionId;
     double nextDataTime;
     int timerId;
