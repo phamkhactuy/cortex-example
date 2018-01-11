@@ -14,14 +14,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 ***************/
 #include "HeadsetFinder.h"
 
-HeadsetFinder::HeadsetFinder(QObject *parent) : QObject(parent)
-{
+HeadsetFinder::HeadsetFinder(QObject *parent) : QObject(parent) {
     client = nullptr;
     timerId = 0;
 }
 
-void HeadsetFinder::clear()
-{
+void HeadsetFinder::clear() {
     if (client) {
         disconnect(client, 0, this, 0);
         client = nullptr;
@@ -29,27 +27,20 @@ void HeadsetFinder::clear()
     timerId = 0;
 }
 
-void HeadsetFinder::findHeadsets(CortexClient* client)
-{
-    if (client == nullptr) return;
+void HeadsetFinder::findHeadsets(CortexClient* client) {
     this->client = client;
-    connect(client, &CortexClient::queryHeadsetsOk, this, &HeadsetFinder::onQueryHeadsets);
+    connect(client, &CortexClient::queryHeadsetsOk, this, &HeadsetFinder::onQueryHeadsetsOk);
     timerId = startTimer(1000);
 }
 
-void HeadsetFinder::timerEvent(QTimerEvent *event)
-{
-    if (client == nullptr) return;
-    if (!client->isConnected()) return;
-    //if (client->token() == "") return;
+void HeadsetFinder::timerEvent(QTimerEvent *event) {
     if (event->timerId() == timerId) {
         qInfo() << "Looking for headsets...";
         client->queryHeadsets();
     }
 }
 
-void HeadsetFinder::onQueryHeadsets(const QList<Headset> &headsets)
-{
+void HeadsetFinder::onQueryHeadsetsOk(const QList<Headset> &headsets) {
     if (headsets.isEmpty()) {
         //qInfo() << "No headset found. Please, connect a headset.";
     }

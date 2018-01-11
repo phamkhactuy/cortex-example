@@ -19,102 +19,44 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #include <QtDebug>
 
 
-const QString clientId = "the client id of your Cortex app";
-const QString clientSecret = "the client secret of your Cortex app";
-
-/*
- * As a developer, you can use your personal EmotivID to run the examples.
- * But in a real application, you should ask your users to login
- * with their own EmotivID.
- */
-const QString username = "a EmotivID";
-const QString password = "a password";
-const QString license =  "";
-
-Training::Training(QObject *parent) : QObject(parent)
-{
+Training::Training(QObject *parent) : QObject(parent) {
     connect(&client, &CortexClient::connected, this, &Training::onConnected);
     connect(&client, &CortexClient::disconnected, this, &Training::onDisconnected);
     connect(&client, &CortexClient::errorReceived, this, &Training::onErrorReceived);
-
-    connect(&client, &CortexClient::getUserLoginOk, this, &Training::onGetUserLogin);
-    connect(&client, &CortexClient::logoutOk, this, &Training::onLogout);
-    connect(&client, &CortexClient::loginOk, this, &Training::onLogin);
-    connect(&client, &CortexClient::authorized, this, &Training::onAuthorized);
-
-    connect(&client, &CortexClient::getDetectionInfoOk, this, &Training::onGetDetectionInfo);
-    connect(&client, &CortexClient::subscribeOk, this, &Training::onSubscribe);
-    connect(&client, &CortexClient::trainingOk, this, &Training::onTraining);
+    connect(&client, &CortexClient::getDetectionInfoOk, this, &Training::onGetDetectionInfoOk);
+    connect(&client, &CortexClient::subscribeOk, this, &Training::onSubscribeOk);
+    connect(&client, &CortexClient::trainingOk, this, &Training::onTrainingOk);
     connect(&client, &CortexClient::streamDataReceived, this, &Training::onStreamDataReceived);
-
     connect(&finder, &HeadsetFinder::headsetsFound, this, &Training::onHeadsetsFound);
     connect(&creator, &SessionCreator::sessionCreated, this, &Training::onSessionCreated);
 }
 
-void Training::start(const QString &detection)
-{
+void Training::start(QString detection) {
     this->detection = detection;
     actionIndex = 0;
     trainingFailure = 0;
     client.open();
 }
 
-void Training::onConnected()
-{
+void Training::onConnected() {
     qInfo() << "Connected to Cortex.";
-    client.getUserLogin();
+    client.getDetectionInfo(detection);
 }
 
-void Training::onDisconnected()
-{
+void Training::onDisconnected() {
     qInfo() << "Disconnected.";
     QCoreApplication::quit();
 }
 
-void Training::onErrorReceived(const QString &method, int code, const QString &error)
-{
+void Training::onErrorReceived(QString method, int code, QString error) {
     qCritical() << "Cortex returned an error:";
     qCritical() << "\t" << method << code << error;
     QCoreApplication::quit();
 }
 
-void Training::onGetUserLogin(const QStringList &usernames)
-{
-    if (usernames.isEmpty()) {
-        // no one is logged in, so no need for a logout
-        onLogout();
-    } else {
-        onLogin();
-    }
-}
-
-void Training::onLogout()
-{
-    // now, we can login
-    client.login(username, password, clientId, clientSecret);
-}
-
-void Training::onLogin()
-{
-    if (license.isEmpty()) {
-        client.authorize();
-    } else {
-        client.authorize(clientId, clientSecret, license);
-    }
-}
-
-void Training::onAuthorized(const QString &token)
-{
-    qInfo() << "Authorize successful, token: " << token;
-    if (token.size()) {
-        client.getDetectionInfo(detection);
-    }
-}
-
-void Training::onGetDetectionInfo(const QStringList &actions,
-                                    const QStringList &controls,
-                                    const QStringList &events)
-{
+void Training::onGetDetectionInfoOk(QStringList actions,
+                                    QStringList controls,
+                                    QStringList events) {
     this->actions = actions;
     qInfo() << "Information for" << detection << ":";
     qInfo() << "Actions " << actions;
@@ -123,36 +65,32 @@ void Training::onGetDetectionInfo(const QStringList &actions,
     finder.findHeadsets(&client);
 }
 
-void Training::onHeadsetsFound(const QList<Headset> &headsets)
-{
+void Training::onHeadsetsFound(const QList<Headset> &headsets) {
     headsetId = headsets.first().id;
     finder.clear();
     creator.createSession(&client, headsetId, "");
 }
 
-void Training::onSessionCreated(const QString &sessionId)
-{
+void Training::onSessionCreated(QString token, QString sessionId) {
+    this->token = token;
     this->sessionId = sessionId;
     creator.clear();
-    client.subscribe(sessionId, "sys");
+    client.subscribe(token, sessionId, "sys");
 }
 
-void Training::onSubscribe(const QString &sid)
-{
+void Training::onSubscribeOk(QString sid) {
     qInfo() << "Subscription to sys stream successful, sid" << sid;
-    client.training(sessionId, detection, action(), "start");
+    client.training(token, sessionId, detection, action(), "start");
 }
 
-void Training::onTraining(const QString &msg)
-{
+void Training::onTrainingOk(QString msg) {
     Q_UNUSED(msg);
     // this signal is not important
     // instead we need to watch the events from the sys stream
 }
 
-void Training::onStreamDataReceived(const QString &sessionId, const QString &stream,
-                                    double time, const QJsonArray &data)
-{
+void Training::onStreamDataReceived(QString sessionId, QString stream,
+                                    double time, const QJsonArray &data) {
     Q_UNUSED(sessionId);
     Q_UNUSED(stream);
     Q_UNUSED(time);
@@ -166,7 +104,7 @@ void Training::onStreamDataReceived(const QString &sessionId, const QString &str
     else if (isEvent(data, "Succeeded")) {
         // the training of this action is a success
         // we "accept" it, and then we will receive the "Completed" event
-        client.training(sessionId, detection, action(), "accept");
+        client.training(token, sessionId, detection, action(), "accept");
     }
     else if (isEvent(data, "Failed")) {
         retryAction();
@@ -177,14 +115,13 @@ void Training::onStreamDataReceived(const QString &sessionId, const QString &str
     }
 }
 
-void Training::nextAction()
-{
+void Training::nextAction() {
     actionIndex++;
     trainingFailure = 0;
 
     if (actionIndex < 3 && actionIndex < actions.size()) {
         // ok, let's train the next action
-        client.training(sessionId, detection, action(), "start");
+        client.training(token, sessionId, detection, action(), "start");
     }
     else {
         // that's enough training for today
@@ -193,13 +130,12 @@ void Training::nextAction()
     }
 }
 
-void Training::retryAction()
-{
+void Training::retryAction() {
     trainingFailure++;
 
     if (trainingFailure < 3) {
         qInfo() << "Sorry, it didn't work. Let's try again.";
-        client.training(sessionId, detection, action(), "start");
+        client.training(token, sessionId, detection, action(), "start");
     }
     else {
         qInfo() << "It seems you are struggling with this action. Let's try another one.";
@@ -207,8 +143,7 @@ void Training::retryAction()
     }
 }
 
-bool Training::isEvent(const QJsonArray &data, const QString &event)
-{
+bool Training::isEvent(const QJsonArray &data, QString event) {
     for (const QJsonValue &val : data) {
         QString str = val.toString();
         if (str.endsWith(event)) {

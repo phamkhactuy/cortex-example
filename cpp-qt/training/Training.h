@@ -33,27 +33,22 @@ public:
     explicit Training(QObject *parent = nullptr);
 
     // detection must be "mentalCommand" or "facialExpression"
-    void start(const QString &detection);
+    void start(QString detection);
 
 private slots:
     void onConnected();
     void onDisconnected();
-    void onErrorReceived(const QString &method, int code, const QString &error);
+    void onErrorReceived(QString method, int code, QString error);
 
-    void onGetUserLogin(const QStringList &usernames);
-    void onLogout();
-    void onLogin();
-    void onAuthorized(const QString &token);
-
-    void onGetDetectionInfo(const QStringList &actions,
-                              const QStringList &controls,
-                              const QStringList &events);
+    void onGetDetectionInfoOk(QStringList actions,
+                              QStringList controls,
+                              QStringList events);
 
     void onHeadsetsFound(const QList<Headset> &headsets);
-    void onSessionCreated(const QString &sessionId);
-    void onSubscribe(const QString &sid);
-    void onTraining(const QString &msg);
-    void onStreamDataReceived(const QString &sessionId, const QString &stream,
+    void onSessionCreated(QString token, QString sessionId);
+    void onSubscribeOk(QString sid);
+    void onTrainingOk(QString msg);
+    void onStreamDataReceived(QString sessionId, QString stream,
                               double time, const QJsonArray &data);
 
 private:
@@ -62,7 +57,7 @@ private:
     }
     void nextAction();
     void retryAction();
-    bool isEvent(const QJsonArray &data, const QString &event);
+    bool isEvent(const QJsonArray &data, QString event);
 
 private:
     CortexClient client;
@@ -72,7 +67,8 @@ private:
     QString detection;
     QStringList actions;
 
-    QString headsetId;    
+    QString headsetId;
+    QString token;
     QString sessionId;
     int actionIndex;
     int trainingFailure;

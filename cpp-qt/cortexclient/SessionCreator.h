@@ -33,22 +33,26 @@ public:
     explicit SessionCreator(QObject *parent = nullptr);
 
     // create a session for a headset
-    void createSession(CortexClient* client, const QString &headsetId, const QString &license);
+    void createSession(CortexClient* client, QString headsetId, QString license);
 
     // break all connections between this object and the Cortex client
     void clear();
 
 signals:
-    void sessionCreated(const QString &sessionId);
+    void sessionCreated(QString token, QString sessionId);
 
 private slots:
-
-    void onCreateSession(const QString &sessionId);
+    void onGetUserLoginOk(const QStringList &usernames);
+    void onLogoutOk();
+    void onLoginOk();
+    void onAuthorizeOk(QString token);
+    void onCreateSessionOk(QString sessionId);
 
 private:
-    CortexClient* client = nullptr;
+    CortexClient* client;
     QString headsetId;
-    QString license;    
+    QString license;
+    QString token;
 };
 
 #endif // SESSIONCREATOR_H

@@ -45,11 +45,11 @@ protected:
     void timerEvent(QTimerEvent *event);
 
 private slots:
-    void onQueryHeadsets(const QList<Headset> &headsets);
+    void onQueryHeadsetsOk(const QList<Headset> &headsets);
 
 private:
-    CortexClient* client = nullptr;
-    int timerId = 0;
+    CortexClient* client;
+    int timerId;
 };
 
 #endif // HEADSETFINDER_H

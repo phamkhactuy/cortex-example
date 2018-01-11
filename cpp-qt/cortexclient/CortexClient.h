@@ -16,68 +16,57 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>
 #define CORTEXCLIENT_H
 
 #include <QObject>
+#include <QWebSocket>
 #include <QString>
 #include <QList>
 #include <QStringList>
-#include <QWebSocket>
+#include <QMap>
+#include <QJsonObject>
+#include <QSslError>
 #include "Headset.h"
 
 /*
  * A simple client for the Cortex service.
  *
  */
-class CortexClientPrivate;
 class CortexClient : public QObject
 {
     Q_OBJECT
+
 public:
     explicit CortexClient(QObject *parent = nullptr);
-    virtual ~CortexClient();
+
 public slots:
     void open();
     void close();
 
-    // login / logout
-    void getUserLogin();
-    void login(const QString &username, const QString &password,
-               const QString &clientId, const QString &clientSecret);
-    void logout(const QString &username);
-
-    // get an authorization token
-    void authorize();
-    void authorize(const QString &clientId, const QString &clientSecret, const QString &license);
-    void setToken(const QString &token);
-    QString token();
-    // void newToken();
-
-    void queryProfiles();
-    void setupProfiles(const QString &headset, const QString &profile, const QString &status);
-
     // list all the headsets connected to your device
     void queryHeadsets();
 
+    // login / logout
+    void getUserLogin();
+    void login(QString username, QString password,
+               QString clientId, QString clientSecret);
+    void logout(QString username);
+
+    // get an authorization token
+    void authorize();
+    void authorize(QString clientId, QString clientSecret, QString license);
+
     // open a session, so we can then get data from a headset
     // you need a license to activate the session
-    void querySessions();
-    void createSession(const QString &headsetId, bool activate);
-    void sessionStartRecord(const QString &sessionId, const QString &recordingName, const QString &recordingNote, const QString &recordingSubject);
-    void sessionStopRecord(const QString &sessionId, const QString &recordingName, const QString &recordingNote, const QString &recordingSubject);
-    void updateSession(const QString &sessionId,  const QString &status, const QString &recordingName, const QString &recordingNote, const QString &recordingSubject);
-    void sessionAddTags(const QString &sessionId, const QStringList& tags);
-    void sessionRemoveTags(const QString &sessionId, const QStringList& tags);
-    void closeSession(const QString &sessionId);
-    void updateSessionNote(const QString &sessionId, const QString &note, const QString &record);
-    //void injectMarker();
+    void createSession(QString token, QString headsetId, bool activate);
+    void closeSession(QString token, QString sessionId);
 
     // subscribe to a data stream
-    void subscribe(const QString &sessionId, const QString &stream);
-    void unsubscribe(const QString &sessionId, const QString &stream);
+    void subscribe(QString token, QString sessionId, QString stream);
+    void unsubscribe(QString token, QString sessionId, QString stream);
 
     // methods for training
-    void getDetectionInfo(const QString &detection);
-    void training(const QString &sessionId, const QString &detection,
-                  const QString &action, const QString &control);
-    bool isConnected();
+    void getDetectionInfo(QString detection);
+    void training(QString token, QString sessionId, QString detection,
+                  QString action, QString control);
+
 signals:
     void connected();
     void disconnected();
@@ -86,45 +75,44 @@ signals:
     void getUserLoginOk(const QStringList &usernames);
     void loginOk();
     void logoutOk();
-    void authorized(const QString &authToken);
-
-    void createSessionOk(const QString &sessionId);
+    void authorizeOk(QString authToken);
+    void createSessionOk(QString sessionId);
     void closeSessionOk();
-
-    void subscribeOk(const QString &sessionId);
-    void unsubscribeOk(const QString &msg);
-
-    void getDetectionInfoOk(QStringList &actions,
-                            QStringList &controls, QStringList &events);
-    void trainingOk(const QString &msg);
+    void subscribeOk(QString sessionId);
+    void unsubscribeOk(QString msg);
+    void getDetectionInfoOk(QStringList actions,
+                            QStringList controls, QStringList events);
+    void trainingOk(QString msg);
 
     // we received an error message in response to a RPC request
-    void errorReceived(const QString &method, int code, const QString &error);
+    void errorReceived(QString method, int code, QString error);
 
     // we received data from a data stream
-    void streamDataReceived(const QString &sessionId, const QString &stream,
+    void streamDataReceived(QString sessionId, QString stream,
                             double time, const QJsonArray &data);
 
 private slots:
     void onError(QAbstractSocket::SocketError error);
     void onSslErrors(const QList<QSslError> &errors);
-    void onTextMessageReceived(const QString &message);
-    void onBinaryMessageReceived(const QByteArray &message);
+    void onMessageReceived(QString message);
 
 private:
     // a generic method to send a RPC request to Cortex
-    void sendRequest(const QString &method, const QJsonObject &params = QJsonObject());
+    void sendRequest(QString method, QJsonObject params = QJsonObject());
 
     // handle the response to a RPC request
-    void handleResponse(const QString &method, const QJsonValue &result);
+    void handleResponse(QString method, const QJsonValue &result);
     void handleGetDetectionInfo(const QJsonValue &result);
 
-    void emitError(const QString &method, const QJsonObject &obj);
+    void emitError(QString method, const QJsonObject &obj);
 
 private:
-    Q_DECLARE_PRIVATE(CortexClient)
-    QScopedPointer<CortexClientPrivate> d_ptr;
+    QWebSocket socket;
+    int nextRequestId;
 
+    // the key is a request id
+    // the value is the method of the request
+    QMap<int, QString> methodForRequestId;
 };
 
 #endif // CORTEXCLIENT_H
