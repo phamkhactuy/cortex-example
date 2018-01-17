@@ -67,6 +67,14 @@ public slots:
     void training(QString token, QString sessionId, QString detection,
                   QString action, QString control);
 
+    // insert a marker, to mark an event in a session
+    // you can use injectMarker alone, to mark an instant event
+    // or you can use injectMarker and later injectStopMarker, to mark a period of time
+    void injectMarker(QString token, QString sessionId,
+                      QString label, int value, qint64 time);
+    void injectStopMarker(QString token, QString sessionId,
+                          QString label, int value, qint64 time);
+
 signals:
     void connected();
     void disconnected();
@@ -83,6 +91,7 @@ signals:
     void getDetectionInfoOk(QStringList actions,
                             QStringList controls, QStringList events);
     void trainingOk(QString msg);
+    void injectMarkerOk();
 
     // we received an error message in response to a RPC request
     void errorReceived(QString method, int code, QString error);
