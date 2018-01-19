@@ -6,7 +6,8 @@ SUBDIRS = \
     motion \
     eeg \
     training \
-    mentalcommand
+    mentalcommand \
+    marker
 
 # build the project sequentially as listed in SUBDIRS !
 CONFIG += ordered

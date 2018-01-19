@@ -52,7 +52,7 @@ This example opens a session with the first Emotiv headset it can find, and disp
 
 This example opens a session with the first Emotiv headset it can find, and then ask you to train 3 mental commands.
 
-If your training is successful, then you can test your mental command skills with the mentalcommand example.
+If your training is successful, then you can test your mental command skills with the **mentalcommand** example.
 
 ### mentalcommand
 
@@ -65,6 +65,14 @@ This example opens a session with the first Emotiv headset it can find, and disp
 This example opens a session with the first Emotiv headset it can find, and displays its eeg data stream for 30 seconds.
 
 To run this example, you need to edit the **eeg/main.cpp** file and set your Emotiv license.
+
+### marker
+
+**WARNING: running this example will debit a session from your Emotiv license.**
+
+This example opens a session with the first Emotiv headset it can find, and inject a few markers in the session. The session ends after 30 seconds.
+
+To run this example, you need to edit the **marker/main.cpp** file and set your Emotiv license.
 
 ## Signals and slots in Qt
 

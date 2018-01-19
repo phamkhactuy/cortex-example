@@ -164,6 +164,31 @@ void CortexClient::training(QString token, QString sessionId, QString detection,
     sendRequest("training", params);
 }
 
+void CortexClient::injectMarker(QString token, QString sessionId,
+                                QString label, int value, qint64 time) {
+    QJsonObject params;
+    params["_auth"] = token;
+    params["session"] = sessionId;
+    params["label"] = label;
+    params["value"] = value;
+    params["port"] = "Cortex Example";
+    params["time"] = time;
+    sendRequest("injectMarker", params);
+}
+
+void CortexClient::injectStopMarker(QString token, QString sessionId,
+                      QString label, int value, qint64 time) {
+    QJsonObject params;
+    params["_auth"] = token;
+    params["session"] = sessionId;
+    params["label"] = label;
+    // please note that we use the field "stop" instead of "value"
+    params["stop"] = value;
+    params["port"] = "Cortex Example";
+    params["time"] = time;
+    sendRequest("injectMarker", params);
+}
+
 void CortexClient::sendRequest(QString method, QJsonObject params) {
     QJsonObject request;
 
@@ -174,7 +199,7 @@ void CortexClient::sendRequest(QString method, QJsonObject params) {
     request["params"] = params;
 
     // send the json message
-    QString message = QJsonDocument(request).toJson();
+    QString message = QJsonDocument(request).toJson(QJsonDocument::Compact);
     //qDebug() << " * send    " << message;
     socket.sendTextMessage(message);
 
@@ -292,6 +317,9 @@ void CortexClient::handleResponse(QString method, const QJsonValue &result) {
     }
     else if (method == "training") {
         emit trainingOk(result.toString());
+    }
+    else if (method == "injectMarker") {
+        emit injectMarkerOk();
     }
     else {
         // unknown method, so we don't know how to interpret the result
