@@ -20,8 +20,10 @@ These instructions will get you a copy of the project up and running on your loc
 This section describe structure overview, core classes and examples. The C# Cortex examples contain 2 parts. Firtly, CortexAcess project is core and reponsible for processing all requests and responses such as a midle layer between user and cortex. Secondly, examples, each examples as a project which reference to CortexAccess project.
 <!-- Structure overview -->
 #### Stucture overview
-The class diagram describe here
-![Class Diagram](/Resources/Images/classDiagram.png)
+The class diagram is described as below
+<p align="center">
+  <img width="460" height="300" src="Resources/Images/classDiagram.png">
+</p>
 
 * CortexClient: Reponsible for sending requests to Cortex and receiving responses, warning, data from Cortex.
 * Process: Process request / reponse messages and route to corresponding controller for handling.
