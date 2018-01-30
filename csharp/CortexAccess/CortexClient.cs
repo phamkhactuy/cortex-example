@@ -1,10 +1,8 @@
 ﻿using System;
-using NUnit.Framework;
 using System.Threading;
 using WebSocket4Net;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+using NUnit.Framework;
 
 namespace CortexAccess
 {
