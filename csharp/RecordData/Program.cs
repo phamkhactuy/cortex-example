@@ -17,11 +17,11 @@ namespace RecordData
             Console.WriteLine("Please wear Headset with good signal!!!");
 
             Process p = new Process();
-            Thread.Sleep(5000); //wait for querrying user login
+            Thread.Sleep(10000); //wait for querrying user login, query headset
             if (String.IsNullOrEmpty(p.GetUserLogin()))
             {
                 p.Login(Username, Password);
-                Thread.Sleep(1000); //wait for login
+                Thread.Sleep(5000); //wait for logining
             }
             // Show username login
             Console.WriteLine("Username :" + p.GetUserLogin());
@@ -30,24 +30,19 @@ namespace RecordData
             {
                 // Send Authorize
                 p.Authorize(LicenseId, DebitNumber);
-                Thread.Sleep(5000); //wait for authorize
+                Thread.Sleep(5000); //wait for authorizing
             }
-
-            if (!String.IsNullOrEmpty(p.GetSelectedHeadsetId()) && !String.IsNullOrEmpty(p.GetAccessToken()))
+            if(!p.IsHeadsetConnected())
             {
-                // Create Sesssion
-                if(!p.IsCreateSession)
-                {
-                    p.CreateSession();
-                    Thread.Sleep(5000); //wait for creating session
-                }
-
-                if (p.IsCreateSession)
-                {
-                    Console.WriteLine("Session have created successfully");
-                }
-
+                p.QueryHeadset();
+                Thread.Sleep(10000); //wait for querying headset and create session
             }
+            if (!p.IsCreateSession)
+            {
+                p.CreateSession();
+                Thread.Sleep(5000);
+            }
+
             Console.WriteLine("Press S to start");
             Console.WriteLine("Press N to start a new Record");
             Console.WriteLine("Press A,B,C to inject marker");
@@ -76,28 +71,27 @@ namespace RecordData
                 else if(key == (int)ConsoleKey.A)
                 {
                     // Inject marker
-                    p.InjectMarker("A", 10,Utils.GetEpochTimeNow());
+                    p.InjectMarker("A", 10, "USB", Utils.GetEpochTimeNow());
 
                 }
                 else if (key == (int)ConsoleKey.B)
                 {
                     // Inject marker
-                    p.InjectMarker("B", 11, Utils.GetEpochTimeNow());
+                    p.InjectMarker("B", 11, "USB", Utils.GetEpochTimeNow());
 
                 }
                 else if (key == (int)ConsoleKey.C)
                 {
                     // Inject marker
-                    p.InjectMarker("C", 12, Utils.GetEpochTimeNow());
+                    p.InjectMarker("C", 12, "USB", Utils.GetEpochTimeNow());
 
                 }
                 else if (key == (int)ConsoleKey.Q)
                 {
                     // Querry Sessions before quit
                     p.QuerySession();
-                    Thread.Sleep(5000);
+                    Thread.Sleep(10000);
                     break;
-
                 }
             }
             Console.WriteLine("End of Program");

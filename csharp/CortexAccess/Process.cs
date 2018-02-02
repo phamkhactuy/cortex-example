@@ -199,6 +199,12 @@ namespace CortexAccess
             return HeadsetCtr.SelectedHeadsetId;
         }
 
+        // check headset connected 
+        public bool IsHeadsetConnected()
+        {
+            return HeadsetCtr.IsConnected;
+        }
+
         // Change Headset
         public void SetHeadsetID(string headsetId)
         {
@@ -221,7 +227,7 @@ namespace CortexAccess
                 SessionCtr.NextStatus = "open";
             else
                 SessionCtr.NextStatus = "active";
-            if (!SessionCtr.IsCreateSession)
+            if (IsHeadsetConnected() && !string.IsNullOrEmpty(GetAccessToken()))
                 SessionCtr.CreateSession(GetSelectedHeadsetId(), GetAccessToken(), ExperimentID);
         }
 
@@ -282,9 +288,12 @@ namespace CortexAccess
             SessionCtr.UpdateNote(GetAccessToken(), SessionCtr.RecordID, note);
         }
         // Inject marker
-        public bool InjectMarker(string label, int value, Int64 timeStamp)
+        public bool InjectMarker(string label, int value, string port, Int64 timeStamp)
         {
-            return SessionCtr.InjectMarker(GetAccessToken(), "USB", label, value, timeStamp);
+            if (SessionCtr.IsCreateSession)
+                return SessionCtr.InjectMarker(GetAccessToken(), port, label, value, timeStamp);
+            else
+                return false;
         }
         // Get Detection Information
         public void QuerryDetectionInfo(string detection)
@@ -298,6 +307,25 @@ namespace CortexAccess
             TrainingCtr.QuerryProfile(GetAccessToken());
         }
 
+        // Get ProfileLists
+        public List<string> GetAllProfiles()
+        {
+            return TrainingCtr.ProfileLists;
+        }
+
+        // Check profileLists existed
+        public bool IsProfilesExisted(string profileName)
+        {
+            if(TrainingCtr.ProfileLists.Count > 0)
+            {
+                if(TrainingCtr.ProfileLists.Contains(profileName))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         // Load profile
         public void LoadProfile(string profileName)
         {
@@ -308,7 +336,7 @@ namespace CortexAccess
         public void CreateProfile(string profileName)
         {
             TrainingCtr.CurrentProfileName = profileName;
-            TrainingCtr.CreateProfile(GetAccessToken(), profileName);
+            TrainingCtr.CreateProfile(GetAccessToken(), GetSelectedHeadsetId() , profileName);
         }
         // Save a profile
         public void SaveProfile()
@@ -472,16 +500,20 @@ namespace CortexAccess
             if (isConnected)
             {
                 Console.WriteLine("Websocket Client Connected");
+                // Query user login
                 if (!AccessCtr.IsLogin)
                     AccessCtr.QueryUserLogin();
                 // Query Headset
                 if(!HeadsetCtr.IsConnected)
                     HeadsetCtr.QueryHeadsets();
-
             }
             else
             {
                 Console.WriteLine("Websocket Client disconnect");
+                if (SessionCtr.IsCreateSession)
+                    CloseSession();
+                // Clear session
+                SessionCtr.ClearSessionControllerData();
             }
         }
 
@@ -494,18 +526,21 @@ namespace CortexAccess
 
         private void QuerryHeadsetReceived(object sender, List<Headset> headsets)
         {
-            Console.WriteLine("QuerryHeadsetReceived");
+            Console.WriteLine("Querry Headset successfully");
 
             // Create a Session when have new update of headset connection
-            if (string.IsNullOrEmpty(GetAccessToken()))
-                return;
-            if(!SessionCtr.IsCreateSession)
-                SessionCtr.CreateSession(GetSelectedHeadsetId(),GetAccessToken(),ExperimentID);
+            //if (string.IsNullOrEmpty(GetAccessToken()))
+            //    return;
+            //if (!SessionCtr.IsCreateSession)
+            //    CreateSession();
         }
 
         private void AuthorizeOK(object sender, string token)
         {
             Console.WriteLine("Authorize successfully!!!. Access Token " + token);
+
+            // Query Profile
+            QuerryProfiles();
         }
         private void LoginOK(object sender, bool isLogin)
         {
@@ -515,11 +550,14 @@ namespace CortexAccess
         private void DisconnectHeadsetReceived(object sender, string headsetID)
         {
             Console.WriteLine("Disconnect headset " + headsetID);
+            if (SessionCtr.IsCreateSession)
+            {
+                CloseSession();
+            }
             // Clear session
-            //if (SessionCtr.IsCreateSession)
-            //    CloseSession();
             SessionCtr.ClearSessionControllerData();
             
+
         }
 
 

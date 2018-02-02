@@ -36,11 +36,11 @@ namespace MotionLogger
             p.OnMotionDataReceived += OnMotionDataReceived;
             p.SessionCtr.OnSubcribeMotionOK += OnMotionDataReceived;
 
-            Thread.Sleep(5000); //wait for querrying user login
+            Thread.Sleep(10000); //wait for querrying user login, query headset
             if (String.IsNullOrEmpty(p.GetUserLogin()))
             {
                 p.Login(Username, Password);
-                Thread.Sleep(1000); //wait for login
+                Thread.Sleep(5000); //wait for logining
             }
             // Show username login
             Console.WriteLine("Username :" + p.GetUserLogin());
@@ -49,20 +49,23 @@ namespace MotionLogger
             {
                 // Send Authorize
                 p.Authorize();
-                Thread.Sleep(5000); //wait for authorize
+                Thread.Sleep(5000); //wait for authorizing
             }
-            if (!String.IsNullOrEmpty(p.GetSelectedHeadsetId()) && !String.IsNullOrEmpty(p.GetAccessToken()))
+            if (!p.IsHeadsetConnected())
             {
-                // Create Sesssion
+                p.QueryHeadset();
+                Thread.Sleep(10000); //wait for querying headset and create session
+            }
+            if (!p.IsCreateSession)
+            {
                 p.CreateSession();
-                Thread.Sleep(5000); //wait for creating session
-                if (p.IsCreateSession)
-                {
-                    Console.WriteLine("Session have created successfully");
-                    // Subcribe data
-                    p.SubcribeData("mot");
-                    Thread.Sleep(5000);
-                }
+                Thread.Sleep(5000);
+            }
+            if (p.IsCreateSession)
+            {
+                // Subcribe Motion data
+                p.SubcribeData("mot");
+                Thread.Sleep(5000);
             }
 
             Console.WriteLine("Press Enter to exit");

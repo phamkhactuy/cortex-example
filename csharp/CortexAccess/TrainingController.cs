@@ -59,6 +59,7 @@ namespace CortexAccess
             ActionLists = new ArrayList();
             ControlLists = new ArrayList();
             EventLists = new ArrayList();
+            ProfileLists = new List<string>();
             IsLoaded = false;
         }
 
@@ -201,11 +202,12 @@ namespace CortexAccess
             CortexClient.Instance.SendTextMessage(param, (int)StreamID.TRAINING_STREAM, "setupProfile", true, (int)TrainingReqType.LOAD_PROFILE);
         }
         // Create profile
-        public void CreateProfile(string token, string profileName)
+        public void CreateProfile(string token, string headsetID, string profileName)
         {
             // Check profile existed
             JObject param = new JObject(
                     new JProperty("_auth", token),
+                    new JProperty("headset", headsetID),
                     new JProperty("profile", profileName),
                     new JProperty("status", "create"));
             CortexClient.Instance.SendTextMessage(param, (int)StreamID.TRAINING_STREAM, "setupProfile", true, (int)TrainingReqType.CREATE_NEW_PROFILE);
@@ -383,6 +385,24 @@ namespace CortexAccess
                         break;
                     case (int)TrainingReqType.UPLOAD_PROFILE:
                         Console.WriteLine("Upload Profile Successfully");
+                        break;
+                    case (int)TrainingReqType.QUERY_PROFILE_LIST:
+                        Console.WriteLine("Querry Profile Successfully");
+                        JArray jProfileArr = (JArray)result;
+                        List<string> profileLists = new List<string>();
+                        foreach (var item in jProfileArr)
+                        {
+                            profileLists.Add((string)item);
+                        }
+                        if(profileLists.Count > 0)
+                        {
+                            ProfileLists = profileLists.ToList();
+
+                        }
+                        else
+                        {
+                            ProfileLists.Clear();
+                        }
                         break;
                     case (int)TrainingReqType.MCC_START:
                     case (int)TrainingReqType.MCC_ACCEPT:

@@ -110,7 +110,7 @@ namespace CortexAccess
                 switch (requestType)
                 {
                     case (int)HeadsetRqType.QUERRY_HEADSET:
-
+                        //Console.WriteLine("Querry Headset successfully");
                         //send event queryHeadsets OK
                         JArray jHeadsetArr = (JArray)data["result"];
 
@@ -124,8 +124,9 @@ namespace CortexAccess
                         }
                         if (headsetLists.Count > 0)
                         {
-                            // Set element 0 as current headset
+                            
                             HeadsetLists = headsetLists.ToList();
+                            OnQuerryHeadsetOK(this, new List<Headset>(HeadsetLists));
 
                             if (HeadsetLists[0].Status == "paired")
                             {
@@ -135,13 +136,15 @@ namespace CortexAccess
                             }
                             else if(HeadsetLists[0].Status == "connected")
                             {
-                                _isConnected = true;
-                                if (!SelectedHeadsetId.Contains(HeadsetLists[0].HeadsetID))
+                                // Set element 0 as current headset
+                                if(!SelectedHeadsetId.Contains(HeadsetLists[0].HeadsetID))
                                 {
+                                    Console.WriteLine("Headset Connected");
+                                    _isConnected = true;
                                     SelectedHeadsetId = HeadsetLists[0].HeadsetID;
-                                    Console.WriteLine("Selected HeadsetID " + SelectedHeadsetId);
-                                    OnQuerryHeadsetOK(this, new List<Headset>(HeadsetLists));
                                 }
+                                   
+                                Console.WriteLine("Selected HeadsetID " + SelectedHeadsetId);
                             }
                         }
                         else
@@ -149,10 +152,7 @@ namespace CortexAccess
                             SelectedHeadsetId = "";
                             _isConnected = false;
                             HeadsetLists.Clear();
-
-                            // Send Disconnect Event
-                            OnDisconnectHeadset(this, "");
-                            Console.WriteLine("No headset avaible");
+                            Console.WriteLine("No headset available");
                         }
                         break;
                     default:

@@ -316,6 +316,7 @@ namespace CortexAccess
                 switch (requestType)
                 {
                     case (int)SessionReqType.CREATE_SESSION:
+                        Console.WriteLine("Create SESSION successfully");
                         // TODO: Store headset setting
 
                         // TODO: Store markers
@@ -333,6 +334,7 @@ namespace CortexAccess
                         // TODO: Send create session successfully
                         break;
                     case (int)SessionReqType.QUERRY_SESSION:
+                        Console.WriteLine("\nQuery SESSION successfully");
                         //send event queryHeadsets OK
                         JArray jSessions = (JArray)data["result"];
 
@@ -430,12 +432,20 @@ namespace CortexAccess
                     case (int)SessionReqType.INJECT_MARKER:
                         // TODO: Store marker
                         JArray markers = (JArray)result["markers"];
+                        Console.WriteLine("\nInject MARKERS successfully");
+                        Console.WriteLine("\n##########List MARKERS#######");
                         foreach(var item in markers)
                         {
                             int code = (int)item["code"];
                             string label = (string)item["label"];
                             string port = (string)item["port"];
-                            Console.WriteLine("MARKERS: code:" + code.ToString() + " label: " + label + " port: " + port);
+                            JArray jEvent = (JArray)item["events"];
+                            foreach(var evtItem in jEvent)
+                            {
+                                string time = (string)evtItem[0];
+                                string value = (string)evtItem[1]; // start and stop marker have value reversered (Eg: 1 vs -1)
+                                Console.WriteLine("code:" + code.ToString() + " label: " + label + " port: " + port + " time: " + time + " value: " + value);
+                            }
                         }
                         break;
                     default:

@@ -12,6 +12,7 @@ namespace MentalCommandTraining
     {
         const string Username = "your_username";
         const string Password = "your_password";
+        const string ProfileName = "profileName";
 
         static void Main(string[] args)
         {
@@ -19,11 +20,11 @@ namespace MentalCommandTraining
             Console.WriteLine("Please wear Headset with good signal!!!");
 
             Process p = new Process();
-            Thread.Sleep(5000); //wait for querrying user login
+            Thread.Sleep(10000); //wait for querrying user login, query headset
             if (String.IsNullOrEmpty(p.GetUserLogin()))
             {
                 p.Login(Username, Password);
-                Thread.Sleep(1000); //wait for login
+                Thread.Sleep(5000); //wait for logining
             }
             // Show username login
             Console.WriteLine("Username :" + p.GetUserLogin());
@@ -32,30 +33,36 @@ namespace MentalCommandTraining
             {
                 // Send Authorize
                 p.Authorize();
-                Thread.Sleep(5000); //wait for authorize
+                Thread.Sleep(5000); //wait for authorizing
+            }
+            if (!p.IsHeadsetConnected())
+            {
+                p.QueryHeadset();
+                Thread.Sleep(10000); //wait for querying headset and create session
+            }
+            if (!p.IsCreateSession)
+            {
+                p.CreateSession();
+                Thread.Sleep(5000);
+            }
+            if (p.IsCreateSession)
+            {
+                // Subcribe sys event
+                p.SubcribeData("sys");
+                Thread.Sleep(5000);
             }
             // get Detection Information
             //p.QuerryDetectionInfo("mentalCommand");
             //Thread.Sleep(2000); //wait for get detection information
 
-            if (!String.IsNullOrEmpty(p.GetSelectedHeadsetId()) && !String.IsNullOrEmpty(p.GetAccessToken()))
-            {
-                // Create Sesssion
-                p.CreateSession();
-                Thread.Sleep(5000); //wait for creating session
-
-                if (p.IsCreateSession)
-                {
-                    Console.WriteLine("Session have created successfully");
-                    // Subcribe sys event
-                    p.SubcribeData("sys");
-                    Thread.Sleep(5000);
-                }
-            }
-            // Create / load a profile
-            Console.WriteLine("Load a profile");
-            p.LoadProfile("MENTAL_29_1_18_1"); // Load profile if existed or create a new Profile
+            // Check Profile existed
+            // Then load an existed profile or create a new Profile
+            if (p.IsProfilesExisted(ProfileName))
+                p.LoadProfile(ProfileName);
+            else
+                p.CreateProfile(ProfileName);
             Thread.Sleep(2000);
+
             // Training neutral
             Console.WriteLine("\n###### Train NEUTRAL Action");
             p.StartCmd("neutral");
