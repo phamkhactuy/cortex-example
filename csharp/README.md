@@ -61,6 +61,7 @@ The class diagram is described as below
 * The basic work-flow: Login -> Authen, Query Headset -> Create Session -> Start Record -> Inject marker (receive A, B, C key for markers) -> Stop Record.
 
 ### Notes
+* You have to logout before logining other account.
 * You need put a valid license to get EEG data, Performance metrics data
 * Currently, the examples use Sleep() for waiting responses from Cortex. But not elegant, you can implement more events for responsive handling.
 * Sometimes, you might get a error. Please re-run the example again. If the issue have not been resolved, Please contact us. 
