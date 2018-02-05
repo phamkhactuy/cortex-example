@@ -44,9 +44,9 @@ namespace RecordData
             }
 
             Console.WriteLine("Press S to start");
-            Console.WriteLine("Press N to start a new Record");
-            Console.WriteLine("Press A,B,C to inject marker");
             Console.WriteLine("Press E to end of a record (stop record)");
+            Console.WriteLine("Press N to start another record");
+            Console.WriteLine("Press A,B,C to inject marker");
             Console.WriteLine("Press Q to querry session and quit");
 
             while (true) {
