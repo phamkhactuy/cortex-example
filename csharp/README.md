@@ -54,7 +54,13 @@ The class diagram is described as below
 * To run this example, you need put your Emotiv ID and Profile Name in Program.cs. Do not need a license here.
 * The basic work-flow: Login -> Authen, Query Headset, Query Detection -> Create Session -> Subscribe _sys_ data -> Load/Create profile -> Start training actions -> Accept/Reject training result -> Save profile -> Subscribe _fac_ data.
 
-**4. RecordData**
+**5. InjectMarkers**
+* This example opens a session with the first Emotiv headset it can find, and inject markers to data stream.
+* To run this example, you need put your Emotiv ID and license in Program.cs.
+* Following guideline shown on console. Press a certain key to set a  label of marker into injectmarker function. The program ignores Tab, Enter, Spacebar and Backspace Key.
+* The basic work-flow: Login -> Authen, Query Headset -> Create Session -> Inject Markers -> Quit.
+
+**6. RecordData**
 * This example opens a session with the first Emotiv headset it can find, start record and inject markers then stop record.
 * To run this example, you need put your Emotiv ID and license in Program.cs.
 * There are default record information (record Name, record subject, record Note), you can replace by yourself.
