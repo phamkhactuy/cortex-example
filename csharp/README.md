@@ -7,6 +7,7 @@ These instructions will get you a copy of the project up and running on your loc
 * You might have [Visual Studio](https://www.visualstudio.com/) with C# supported (msvc14 or higher recommended).
 * The Cortex have to be running on your machine such as service. You can get the Cortex from (https://www.emotiv.com/developer/). In addition, the Cortex also is installed when EmotivPRO is installed.
 * Get a client id and a client secret from emotiv.com. You must connect to your Emotiv account on emotiv.com and create a Cortex app. If you don't have a EmotivID, you can [register here](https://id.emotivcloud.com/eoidc/account/registration/).
+* We have updated our Terms of Use, Privacy Policy and EULA to comply with GDPR. Please login via CortexUI to read and accept our latest policies in order to proceed using the following examples.  
 
 ### How to compile
 <!-- how to compile  -->
