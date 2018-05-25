@@ -171,7 +171,7 @@ namespace CortexAccess
             if(response["warning"] != null)
             {
                 JObject warning = (JObject)response["warning"];
-                string messageWarning = (string)warning["warning"];
+                string messageWarning = (string)warning["message"];
                 int code = -1;
                 if(warning["code"] != null)
                     code = (int)warning["code"];

@@ -9,6 +9,8 @@ These examples were compiled and tested with Qt 5.9
 
 On macOS, you also need to install Xcode, or the "Command Line Tools for Xcode".
 
+We have updated our Terms of Use, Privacy Policy and EULA to comply with GDPR. Please login via CortexUI to read and accept our latest policies in order to proceed using the following examples.
+
 ## How to compile
 
 The easiest way to compile these sources is to use the Qt Creator IDE. It is included in the Qt framework.
