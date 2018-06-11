@@ -5,11 +5,11 @@ These examples show how to call the Cortex API from C++, using the Qt framework.
 ## Prerequisites
 
 You must install the Qt framework. You can get it for free at [www.qt.io](https://www.qt.io).  
-These examples were compiled and tested with Qt 5.9
+These examples were compiled and tested with Qt 5.10
 
 On macOS, you also need to install Xcode, or the "Command Line Tools for Xcode".
 
-We have updated our Terms of Use, Privacy Policy and EULA to comply with GDPR. Please login via CortexUI to read and accept our latest policies in order to proceed using the following examples.
+We have updated our Terms of Use, Privacy Policy and EULA to comply with GDPR. Please login via Cortex App to read and accept our latest policies in order to proceed using the following examples.
 
 ## How to compile
 
