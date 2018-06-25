@@ -70,7 +70,7 @@ if (require.main === module) {
       console.warn('Streaming raw data as CSV. Press any key to add a marker or escape to stop.')
       return new Promise(resolve => {
         stdin.on('keypress', (char, key) => {
-          const time = Date.now()
+          const time = new Date()
           const {ctrl, alt, meta, name} = key
           if (!ctrl && !alt && !meta && name.match(/^[a-z0-9]$/)) {
             client.injectMarker({label: 'key', value: name, time})
