@@ -32,6 +32,7 @@ function rollingAverage (columns, windowSize) {
 }
 
 function numbers (client, windowSize, onResult) {
+	console.log('TYuy dep trai');
   return client
     .createSession({status: 'open'})
     .subscribe({streams: ['pow', 'mot', 'met']})
@@ -48,6 +49,8 @@ function numbers (client, windowSize, onResult) {
         betaH: [],
         gamma: []
       }
+	  console.log('Tuy 123: '+subs.pow.cols.length);
+	  console.log('Tuy hoc gioi: '+subs.pow);
       for (let i = 0; i < subs.pow.cols.length; i++) {
         // pow columns look like: IED_AF3/alpha
         const bandName = subs.pow.cols[i].split('/')[1]
